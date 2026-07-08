@@ -387,7 +387,7 @@
 
         // Fetch the latest data straight from the shared Google Sheet
         async function loadClaimsFromSheet(isManualRefresh = false) {
-            if (SCRIPT_URL.includes('PASTE_YOUR_GOOGLE_APPS_SCRIPT')) {
+            if (SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyYB-0Ui-vVaImuDIXoQPEhhVUZLQbXCruphK6DtnpNJYpqYnTLg8f3rWpgZWxx5U7q/exec')) {
                 setSyncStatus('error', 'Google Sheet not connected yet (see setup instructions)');
                 return;
             }
@@ -415,7 +415,7 @@
 
         // Send an action (add/update/delete/toggleStatus/clearAll) to the Apps Script backend
         async function syncToSheet(action, payload) {
-            if (SCRIPT_URL.includes('PASTE_YOUR_GOOGLE_APPS_SCRIPT')) {
+            if (SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyYB-0Ui-vVaImuDIXoQPEhhVUZLQbXCruphK6DtnpNJYpqYnTLg8f3rWpgZWxx5U7q/exec')) {
                 showToast('Google Sheet not connected yet (see setup instructions).', 'info');
                 return null;
             }
