@@ -568,7 +568,7 @@
                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                             </span>
-                            <span class="font-bold flex-1">🔔 Return Processed: Customer has been notified to send their item back.</span>
+                            <span class="font-bold flex-1">🔔 Pickup Requested: DHL pickup has been arranged to collect the customer's item.</span>
                         </div>
                     `;
                 }
@@ -741,7 +741,7 @@
                 result = await syncToSheet('update', { claim: updatedClaim });
                 if (result) {
                     if (returnStatus === 'Initiate Return') {
-                        showToast('Return initiated! Customer has been alerted.', 'success');
+                        showToast('DHL pickup requested for this return!', 'success');
                     } else {
                         showToast('Warranty claim updated successfully!', 'success');
                     }
@@ -766,7 +766,7 @@
                 result = await syncToSheet('add', { claim: newClaim });
                 if (result) {
                     if (returnStatus === 'Initiate Return') {
-                        showToast('Claim added & Return Initiated! Customer alerted.', 'success');
+                        showToast('Claim added & DHL pickup requested!', 'success');
                     } else {
                         showToast('New warranty claim added successfully!', 'success');
                     }
