@@ -197,6 +197,16 @@
                         <textarea id="issue-summary" rows="3" placeholder="Contoh: Customer cakap perfume leaking selepas guna 3 hari, bukan terus bila buka botol atau spray pertama..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm resize-none"></textarea>
                     </div>
 
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Photos <span class="text-slate-400 normal-case font-normal">(optional)</span></label>
+                        <div id="photo-dropzone" onclick="document.getElementById('photo-file-input').click()" class="w-full border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition text-xs text-slate-400">
+                            <svg class="w-6 h-6 mx-auto mb-1 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Tap to upload photo, or paste (Ctrl+V) a screenshot
+                        </div>
+                        <input type="file" id="photo-file-input" accept="image/*" multiple class="hidden" onchange="handlePhotoFileSelect(event)">
+                        <div id="photo-previews" class="flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+
                     <button type="submit" id="submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-emerald-100 transition duration-150 flex justify-center items-center gap-2 text-sm mt-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                         <span class="whitespace-nowrap">Save Claim</span>
@@ -251,6 +261,11 @@
                 </div>
             </div>
     </main>
+
+    <!-- Photo Lightbox -->
+    <div id="photo-lightbox" onclick="closePhotoLightbox()" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center p-4 cursor-zoom-out">
+        <img id="photo-lightbox-img" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+    </div>
 
     <!-- AI Reply Modal -->
     <div id="ai-reply-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
@@ -363,6 +378,7 @@
         let claims = [];
         let currentlySelectedClaimForReply = null;
         let isSyncing = false;
+        let claimPhotos = []; // {status: 'new', dataUrl} or {status: 'existing', url}
         
         // Confirmation Modal callback state
         let activeConfirmCallback = null;
@@ -465,6 +481,104 @@
                 showToast('Could not save to Google Sheet. Please check your connection and try again.', 'info');
                 return null;
             }
+        }
+
+        // Upload a single photo to Google Drive via the Apps Script backend (returns the file's URL)
+        async function uploadPhotoToSheet(dataUrl, filename) {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'uploadPhoto', dataUrl, filename })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || 'Upload failed');
+            return data.url;
+        }
+
+        // Resize/compress an image file client-side before upload (keeps payloads small & fast)
+        function compressImage(file, maxDim = 1280, quality = 0.72) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let { width, height } = img;
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+                            else { width = Math.round(width * maxDim / height); height = maxDim; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function addPendingPhotoFile(file) {
+            if (!file || file.type.indexOf('image') !== 0) return;
+            try {
+                const dataUrl = await compressImage(file);
+                claimPhotos.push({ status: 'new', dataUrl });
+                renderPhotoPreviews();
+            } catch (err) {
+                console.error('Image processing error:', err);
+                showToast('Could not process that image.', 'info');
+            }
+        }
+
+        function handlePhotoFileSelect(event) {
+            const files = Array.from(event.target.files || []);
+            files.forEach(addPendingPhotoFile);
+            event.target.value = ''; // allow re-selecting the same file later
+        }
+
+        // Global paste listener — active whenever the Add/Edit Claim drawer is open
+        document.addEventListener('paste', function(e) {
+            const drawer = document.getElementById('form-drawer');
+            if (!drawer || drawer.classList.contains('-translate-x-full')) return;
+            const items = (e.clipboardData || window.clipboardData).items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.indexOf('image') === 0) {
+                    addPendingPhotoFile(item.getAsFile());
+                }
+            }
+        });
+
+        function renderPhotoPreviews() {
+            const container = document.getElementById('photo-previews');
+            if (!container) return;
+            container.innerHTML = claimPhotos.map((p, idx) => `
+                <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200">
+                    <img src="${p.status === 'new' ? p.dataUrl : p.url}" class="w-full h-full object-cover">
+                    <button type="button" onclick="removePhoto(${idx})" class="absolute top-0.5 right-0.5 bg-black/60 hover:bg-black/80 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] leading-none">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removePhoto(idx) {
+            claimPhotos.splice(idx, 1);
+            renderPhotoPreviews();
+        }
+
+        function openPhotoLightbox(url) {
+            document.getElementById('photo-lightbox-img').src = url;
+            const lb = document.getElementById('photo-lightbox');
+            lb.classList.remove('hidden');
+            lb.classList.add('flex');
+        }
+
+        function closePhotoLightbox() {
+            const lb = document.getElementById('photo-lightbox');
+            lb.classList.add('hidden');
+            lb.classList.remove('flex');
         }
 
         // Helper: Generate a unique row of Product + Defect Select input inside the form
@@ -664,6 +778,15 @@
                             </div>
                             ` : ''}
 
+                            <!-- Attached Photos -->
+                            ${claim.photos && claim.photos.length > 0 ? `
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                ${claim.photos.map(url => `
+                                    <img src="${url}" onclick="openPhotoLightbox('${url}')" class="w-14 h-14 rounded-lg object-cover border border-slate-200 cursor-pointer hover:opacity-80 transition">
+                                `).join('')}
+                            </div>
+                            ` : ''}
+
                             <!-- Initiate Return Dynamic Box -->
                             ${returnAlertHTML}
                         </div>
@@ -753,6 +876,27 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<span class="whitespace-nowrap">Saving...</span>`;
 
+            // Upload any newly pasted/selected photos to Google Drive first
+            const hasNewPhotos = claimPhotos.some(p => p.status === 'new');
+            if (hasNewPhotos) {
+                submitBtn.innerHTML = `<span class="whitespace-nowrap">Uploading photos...</span>`;
+                try {
+                    for (const p of claimPhotos) {
+                        if (p.status === 'new') {
+                            const url = await uploadPhotoToSheet(p.dataUrl, 'claim-' + Date.now() + '.jpg');
+                            p.status = 'existing';
+                            p.url = url;
+                            delete p.dataUrl;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Photo upload error:', err);
+                    showToast('Some photos failed to upload. Saving claim without them.', 'info');
+                }
+                submitBtn.innerHTML = `<span class="whitespace-nowrap">Saving...</span>`;
+            }
+            const photoUrls = claimPhotos.filter(p => p.status === 'existing').map(p => p.url);
+
             let result;
             if (editId) {
                 // Edit existing claim
@@ -770,7 +914,8 @@
                     trackingNew: trackingNew,
                     notes: notes,
                     reportDate: reportDate,
-                    issueSummary: issueSummary
+                    issueSummary: issueSummary,
+                    photos: photoUrls
                 };
                 result = await syncToSheet('update', { claim: updatedClaim });
                 if (result) {
@@ -796,6 +941,7 @@
                     notes: notes,
                     reportDate: reportDate,
                     issueSummary: issueSummary,
+                    photos: photoUrls,
                     createdAt: new Date().toISOString()
                 };
                 result = await syncToSheet('add', { claim: newClaim });
@@ -834,6 +980,8 @@
             document.getElementById('tracking-new').value = claim.trackingNew || '';
             document.getElementById('ops-notes').value = claim.notes || '';
             document.getElementById('issue-summary').value = claim.issueSummary || '';
+            claimPhotos = (claim.photos || []).map(url => ({ status: 'existing', url }));
+            renderPhotoPreviews();
 
             // Clean existing product-defect row items and populate edit target sets
             const container = document.getElementById('products-defects-container');
@@ -884,6 +1032,9 @@
             // Clean dynamic products list & spawn exactly one fresh clean row
             document.getElementById('products-defects-container').innerHTML = '';
             addProductDefectRow();
+
+            claimPhotos = [];
+            renderPhotoPreviews();
 
             document.getElementById('form-title').innerText = "Add New Claim";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
