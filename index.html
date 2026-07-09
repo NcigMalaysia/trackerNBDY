@@ -424,6 +424,12 @@
                     <p class="text-sm text-slate-500 mt-2" id="confirm-message">This action cannot be undone.</p>
                 </div>
             </div>
+            <!-- Optional Password Gate (shown only for high-risk actions like Reset All) -->
+            <div id="confirm-password-wrapper" class="hidden mt-4">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="confirm-password-input">Enter password to confirm</label>
+                <input type="password" id="confirm-password-input" placeholder="Password" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition text-sm">
+                <p id="confirm-password-error" class="hidden text-xs text-rose-600 font-semibold mt-1.5">Wrong password. Nothing was deleted.</p>
+            </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button id="confirm-cancel-btn" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-sm hover:bg-slate-50 transition font-semibold">
                     Cancel
@@ -457,6 +463,7 @@
         
         // Confirmation Modal callback state
         let activeConfirmCallback = null;
+        let activeConfirmRequiresPassword = false;
 
         // Supported Products list
         const productList = ["Qismet", "Destino Oscura", "Zarya", "Prima Facie", "Carte Blanche"];
@@ -1322,20 +1329,31 @@
         }
 
         // Custom Modal Confirm Logic (Safe Replacement for native confirm)
-        function showCustomConfirm(title, message, callback) {
+        const RESET_PASSWORD = "1234"; // Simple accidental-tap safeguard, not real security (visible in page source)
+
+        function showCustomConfirm(title, message, callback, requirePassword = false) {
             const modal = document.getElementById('custom-confirm-modal');
             const content = document.getElementById('custom-confirm-content');
             
             document.getElementById('confirm-title').innerText = title;
             document.getElementById('confirm-message').innerText = message;
-            
+
             activeConfirmCallback = callback;
+            activeConfirmRequiresPassword = requirePassword;
+
+            const pwWrapper = document.getElementById('confirm-password-wrapper');
+            const pwInput = document.getElementById('confirm-password-input');
+            const pwError = document.getElementById('confirm-password-error');
+            pwInput.value = '';
+            pwError.classList.add('hidden');
+            pwWrapper.classList.toggle('hidden', !requirePassword);
             
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.add('opacity-100');
                 content.classList.remove('scale-95');
                 content.classList.add('scale-100');
+                if (requirePassword) pwInput.focus();
             }, 10);
         }
 
@@ -1348,17 +1366,37 @@
             setTimeout(() => {
                 modal.classList.add('hidden');
                 activeConfirmCallback = null;
+                activeConfirmRequiresPassword = false;
+                document.getElementById('confirm-password-wrapper').classList.add('hidden');
+                document.getElementById('confirm-password-error').classList.add('hidden');
             }, 300);
         }
 
         // Configure click event listeners for confirmation buttons
         document.getElementById('confirm-cancel-btn').onclick = closeConfirmModal;
         document.getElementById('confirm-ok-btn').onclick = function() {
+            if (activeConfirmRequiresPassword) {
+                const entered = document.getElementById('confirm-password-input').value;
+                if (entered !== RESET_PASSWORD) {
+                    document.getElementById('confirm-password-error').classList.remove('hidden');
+                    document.getElementById('confirm-password-input').value = '';
+                    document.getElementById('confirm-password-input').focus();
+                    return; // Wrong password — keep modal open, do NOT run the callback
+                }
+            }
             if (activeConfirmCallback) {
                 activeConfirmCallback();
             }
             closeConfirmModal();
         };
+
+        // Allow pressing Enter in the password field to submit, instead of requiring a click
+        document.getElementById('confirm-password-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('confirm-ok-btn').click();
+            }
+        });
 
         // Delete Claim Actions using Premium Dialog Modals
         function confirmDeleteClaim(id) {
@@ -1387,7 +1425,8 @@
                         updateStatistics();
                         showToast('All claim records deleted.', 'info');
                     }
-                }
+                },
+                true // require password for this high-risk action
             );
         }
 
