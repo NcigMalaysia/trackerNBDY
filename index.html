@@ -201,8 +201,12 @@
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Photos <span class="text-slate-400 normal-case font-normal">(optional)</span></label>
                         <div id="photo-dropzone" onclick="document.getElementById('photo-file-input').click()" class="w-full border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition text-xs text-slate-400">
                             <svg class="w-6 h-6 mx-auto mb-1 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            Tap to upload photo, or paste (Ctrl+V) a screenshot
+                            Tap to upload photo, or click "Paste from Clipboard" below
                         </div>
+                        <button type="button" onclick="pasteFromClipboardBtn()" class="mt-2 w-full text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg py-2 transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                            Paste from Clipboard
+                        </button>
                         <input type="file" id="photo-file-input" accept="image/*" multiple class="hidden" onchange="handlePhotoFileSelect(event)">
                         <div id="photo-previews" class="flex flex-wrap gap-2 mt-2"></div>
                     </div>
@@ -545,12 +549,45 @@
             if (!drawer || drawer.classList.contains('-translate-x-full')) return;
             const items = (e.clipboardData || window.clipboardData).items;
             if (!items) return;
+            let foundImage = false;
             for (const item of items) {
                 if (item.type.indexOf('image') === 0) {
+                    foundImage = true;
                     addPendingPhotoFile(item.getAsFile());
                 }
             }
+            if (!foundImage) {
+                showToast('No image found in clipboard. Copy an image first (screenshot / right-click > Copy Image), then try again.', 'info');
+            }
         });
+
+        // Explicit "Paste from Clipboard" button — uses the Async Clipboard API,
+        // which is more reliable than the keyboard Ctrl+V event on some desktop browsers.
+        async function pasteFromClipboardBtn() {
+            if (!navigator.clipboard || !navigator.clipboard.read) {
+                showToast('Your browser doesn\'t support this button. Try Ctrl+V instead, or use "Tap to upload".', 'info');
+                return;
+            }
+            try {
+                const clipboardItems = await navigator.clipboard.read();
+                let foundImage = false;
+                for (const clipboardItem of clipboardItems) {
+                    for (const type of clipboardItem.types) {
+                        if (type.indexOf('image') === 0) {
+                            foundImage = true;
+                            const blob = await clipboardItem.getType(type);
+                            await addPendingPhotoFile(blob);
+                        }
+                    }
+                }
+                if (!foundImage) {
+                    showToast('No image found in clipboard. Copy an image first (screenshot / right-click > Copy Image), then try again.', 'info');
+                }
+            } catch (err) {
+                console.error('Clipboard read error:', err);
+                showToast('Could not read clipboard. Your browser may be blocking clipboard access — try "Tap to upload" instead.', 'info');
+            }
+        }
 
         function renderPhotoPreviews() {
             const container = document.getElementById('photo-previews');
