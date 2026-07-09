@@ -47,6 +47,10 @@
                 </div>
             </div>
             <div class="flex flex-wrap gap-2">
+                <button onclick="openFormDrawer()" id="open-form-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-lg transition flex items-center gap-1.5 font-semibold">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    New Claim
+                </button>
                 <button onclick="loadClaimsFromSheet(true)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-700 flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 12H18M4 4l5 5"/></svg>
                     Refresh
@@ -91,113 +95,124 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Form Input Panel -->
-            <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 sticky top-24">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-bold text-slate-900" id="form-title">Add New Claim</h2>
+        <!-- Backdrop for the slide-in form drawer -->
+        <div id="form-drawer-backdrop" onclick="closeFormDrawer()" class="fixed inset-0 bg-black/40 z-40 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+        <!-- Slide-in Form Drawer (hidden to the left until opened) -->
+        <div id="form-drawer" class="fixed top-0 left-0 h-full w-full max-w-md bg-white z-50 shadow-2xl -translate-x-full transition-transform duration-300 overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-slate-900" id="form-title">Add New Claim</h2>
+                    <div class="flex items-center gap-3">
                         <button id="cancel-edit-btn" onclick="resetForm()" class="hidden text-xs text-rose-500 hover:underline font-semibold">Cancel Edit</button>
-                    </div>
-                    
-                    <form id="warranty-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
-                        <input type="hidden" id="edit-id">
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="cust-name">Customer Name <span class="text-red-500">*</span></label>
-                            <input type="text" id="cust-name" required placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
-                        </div>
-
-                        <!-- Combined Phone and Social Source Fields -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="cust-phone">Phone Number <span class="text-red-500">*</span></label>
-                                <input type="tel" id="cust-phone" required placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="cust-source">Lead Source <span class="text-red-500">*</span></label>
-                                <select id="cust-source" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white transition text-sm">
-                                    <option value="" disabled selected>Select Source</option>
-                                    <option value="FB">FB</option>
-                                    <option value="Instagram">Instagram</option>
-                                    <option value="WhatsApp">WhatsApp</option>
-                                    <option value="Threads">Threads</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="order-num">Order Number <span class="text-red-500">*</span></label>
-                                <input type="text" id="order-num" required placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="report-date">Report Date <span class="text-red-500">*</span></label>
-                                <input type="date" id="report-date" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
-                            </div>
-                        </div>
-
-                        <!-- Dynamic Products & Defects Area -->
-                        <div class="bg-slate-50/60 p-4 rounded-xl border border-slate-100 space-y-3">
-                            <div class="flex justify-between items-center">
-                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Products & Defects <span class="text-red-500">*</span></label>
-                                <button type="button" onclick="addProductDefectRow()" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-xs">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                                    Add Item
-                                </button>
-                            </div>
-                            
-                            <!-- Dynamic Rows Container -->
-                            <div id="products-defects-container" class="space-y-3">
-                                <!-- JS will automatically add the first row on render/reset -->
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="tracking-return">Return Tracking</label>
-                                <input type="text" id="tracking-return" placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="tracking-new">New ID Number</label>
-                                <input type="text" id="tracking-new" placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
-                            </div>
-                        </div>
-
-                        <!-- Combined Return Processing and Operational Notes in a 3-column responsive grid -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="sm:col-span-1">
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="return-status">Return Processing</label>
-                                <select id="return-status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white transition text-sm">
-                                    <option value="">-- None --</option>
-                                    <option value="Initiate Return">Initiate Return</option>
-                                </select>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="ops-notes">Operational Notes</label>
-                                <input type="text" id="ops-notes" placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="issue-summary">
-                                Issue Summary <span class="text-slate-400 normal-case font-normal">(for Product Team — how did it happen?)</span>
-                            </label>
-                            <textarea id="issue-summary" rows="3" placeholder="Contoh: Customer cakap perfume leaking selepas guna 3 hari, bukan terus bila buka botol atau spray pertama..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm resize-none"></textarea>
-                        </div>
-
-                        <button type="submit" id="submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-emerald-100 transition duration-150 flex justify-center items-center gap-2 text-sm mt-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                            <span class="whitespace-nowrap">Save Claim</span>
+                        <button onclick="closeFormDrawer()" title="Close" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-500 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         </button>
-                    </form>
+                    </div>
                 </div>
-            </div>
+                
+                <form id="warranty-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <input type="hidden" id="edit-id">
 
-            <!-- List and Tracker Table Panel -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Filter and Search -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="cust-name">Customer Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="cust-name" required placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
+                    </div>
+
+                    <!-- Combined Phone and Social Source Fields -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="cust-phone">Phone Number <span class="text-red-500">*</span></label>
+                            <input type="tel" id="cust-phone" required placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="cust-source">Lead Source <span class="text-red-500">*</span></label>
+                            <select id="cust-source" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white transition text-sm">
+                                <option value="" disabled selected>Select Source</option>
+                                <option value="FB">FB</option>
+                                <option value="Instagram">Instagram</option>
+                                <option value="WhatsApp">WhatsApp</option>
+                                <option value="Threads">Threads</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="order-num">Order Number <span class="text-red-500">*</span></label>
+                            <input type="text" id="order-num" required placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="report-date">Report Date <span class="text-red-500">*</span></label>
+                            <input type="date" id="report-date" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Products & Defects Area -->
+                    <div class="bg-slate-50/60 p-4 rounded-xl border border-slate-100 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Products & Defects <span class="text-red-500">*</span></label>
+                            <button type="button" onclick="addProductDefectRow()" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-xs">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                Add Item
+                            </button>
+                        </div>
+                        
+                        <!-- Dynamic Rows Container -->
+                        <div id="products-defects-container" class="space-y-3">
+                            <!-- JS will automatically add the first row on render/reset -->
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="tracking-return">Return Tracking</label>
+                            <input type="text" id="tracking-return" placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="tracking-new">New ID Number</label>
+                            <input type="text" id="tracking-new" placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Combined Return Processing and Operational Notes in a 3-column responsive grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="sm:col-span-1">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="return-status">Return Processing</label>
+                            <select id="return-status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white transition text-sm">
+                                <option value="">-- None --</option>
+                                <option value="Initiate Return">Initiate Return</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="ops-notes">Operational Notes</label>
+                            <input type="text" id="ops-notes" placeholder="" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="issue-summary">
+                            Issue Summary <span class="text-slate-400 normal-case font-normal">(for Product Team — how did it happen?)</span>
+                        </label>
+                        <textarea id="issue-summary" rows="3" placeholder="Contoh: Customer cakap perfume leaking selepas guna 3 hari, bukan terus bila buka botol atau spray pertama..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm resize-none"></textarea>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-emerald-100 transition duration-150 flex justify-center items-center gap-2 text-sm mt-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                        <span class="whitespace-nowrap">Save Claim</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Small pull tab, visible at the left edge, to reopen the drawer -->
+        <button onclick="openFormDrawer()" id="drawer-pull-tab" title="Add New Claim" class="fixed left-0 top-1/2 -translate-y-1/2 z-30 bg-emerald-600 hover:bg-emerald-700 text-white w-6 h-16 rounded-r-lg shadow-md flex items-center justify-center transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        <div class="space-y-6">
+            <!-- Filter and Search -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
                     <div class="relative w-full md:w-72">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -232,10 +247,9 @@
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0V9a2 2 0 00-2-2H6a2 2 0 00-2 2v4.5m15 3.5v-2V9"/></svg>
                     </div>
                     <h3 class="text-lg font-bold text-slate-800">No Claims Found</h3>
-                    <p class="text-sm text-slate-500 mt-1">Use the form on the left to add your first warranty claim.</p>
+                    <p class="text-sm text-slate-500 mt-1">Tap "New Claim" above to add your first warranty claim.</p>
                 </div>
             </div>
-        </div>
     </main>
 
     <!-- AI Reply Modal -->
@@ -843,6 +857,22 @@
             `;
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            openFormDrawer();
+        }
+
+        // Slide-in Form Drawer Controls
+        function openFormDrawer() {
+            document.getElementById('form-drawer').classList.remove('-translate-x-full');
+            document.getElementById('form-drawer-backdrop').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('drawer-pull-tab').classList.add('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFormDrawer() {
+            document.getElementById('form-drawer').classList.add('-translate-x-full');
+            document.getElementById('form-drawer-backdrop').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('drawer-pull-tab').classList.remove('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = '';
         }
 
         // Reset/Cancel Form Actions
