@@ -6,6 +6,8 @@
     <title>NBDY Warranty Tracker</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js (for Dashboard view) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,6 +47,10 @@
                         <span id="sync-label">Connecting to Google Sheet...</span>
                     </span>
                 </div>
+            </div>
+            <div class="flex bg-slate-800 rounded-lg p-1 gap-1">
+                <button onclick="switchView('list')" id="tab-list-btn" class="px-3 py-1.5 rounded-md text-xs font-bold transition bg-emerald-600 text-white">Claims List</button>
+                <button onclick="switchView('dashboard')" id="tab-dashboard-btn" class="px-3 py-1.5 rounded-md text-xs font-bold transition text-slate-400 hover:text-white">Dashboard</button>
             </div>
             <div class="flex flex-wrap gap-2">
                 <button onclick="openFormDrawer()" id="open-form-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-lg transition flex items-center gap-1.5 font-semibold">
@@ -224,7 +230,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
 
-        <div class="space-y-6">
+        <div class="space-y-6" id="view-list">
             <!-- Filter and Search -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
                     <div class="relative w-full md:w-72">
@@ -263,6 +269,71 @@
                     <h3 class="text-lg font-bold text-slate-800">No Claims Found</h3>
                     <p class="text-sm text-slate-500 mt-1">Tap "New Claim" above to add your first warranty claim.</p>
                 </div>
+            </div>
+
+            <!-- ===================== DASHBOARD VIEW ===================== -->
+            <div class="hidden space-y-6" id="view-dashboard">
+
+                <!-- Date Range Filter -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="flex flex-wrap gap-3 items-center w-full md:w-auto">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-semibold text-slate-500 uppercase" for="dash-date-from">From</label>
+                            <input type="date" id="dash-date-from" onchange="renderDashboard()" class="px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-semibold text-slate-500 uppercase" for="dash-date-to">To</label>
+                            <input type="date" id="dash-date-to" onchange="renderDashboard()" class="px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <button onclick="clearDashboardDateFilter()" class="text-xs text-slate-500 hover:text-slate-700 font-bold underline">Clear</button>
+                    </div>
+                    <div class="text-xs text-slate-400 font-semibold" id="dash-range-summary">Showing all-time data</div>
+                </div>
+
+                <!-- Dashboard Stat Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Claims in Range</p>
+                        <h3 class="text-2xl font-bold mt-1 text-slate-800" id="dash-stat-claims">0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Units Reported</p>
+                        <h3 class="text-2xl font-bold mt-1 text-slate-800" id="dash-stat-units">0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Top Product</p>
+                        <h3 class="text-base font-bold mt-1 text-slate-800 truncate" id="dash-stat-top-product">—</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Top Defect</p>
+                        <h3 class="text-base font-bold mt-1 text-slate-800 truncate" id="dash-stat-top-defect">—</h3>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3">Claims by Product</h4>
+                        <canvas id="chart-by-product" height="220"></canvas>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3">Claims by Defect Type</h4>
+                        <canvas id="chart-by-defect" height="220"></canvas>
+                    </div>
+                </div>
+
+                <!-- Trend Chart -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <h4 class="text-sm font-bold text-slate-700 mb-3">Claims Over Time</h4>
+                    <canvas id="chart-trend" height="110"></canvas>
+                </div>
+
+                <!-- Product x Defect Matrix -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
+                    <h4 class="text-sm font-bold text-slate-700 mb-3">Product × Defect Breakdown</h4>
+                    <table class="w-full text-sm" id="dash-matrix-table"></table>
+                </div>
+
             </div>
     </main>
 
@@ -392,6 +463,170 @@
         
         // Supported Defects list
         const defectList = ["Leaking", "Broken", "Wrong item", "Short item"];
+
+        // ====== DASHBOARD STATE ======
+        let currentView = 'list'; // 'list' | 'dashboard'
+        let chartInstances = {}; // canvasId -> Chart.js instance, so we can destroy/recreate cleanly
+
+        // Toggle between the Claims List tab and the Dashboard tab
+        function switchView(view) {
+            currentView = view;
+            document.getElementById('view-list').classList.toggle('hidden', view !== 'list');
+            document.getElementById('view-dashboard').classList.toggle('hidden', view !== 'dashboard');
+
+            const activeCls = 'px-3 py-1.5 rounded-md text-xs font-bold transition bg-emerald-600 text-white';
+            const inactiveCls = 'px-3 py-1.5 rounded-md text-xs font-bold transition text-slate-400 hover:text-white';
+            document.getElementById('tab-list-btn').className = view === 'list' ? activeCls : inactiveCls;
+            document.getElementById('tab-dashboard-btn').className = view === 'dashboard' ? activeCls : inactiveCls;
+
+            if (view === 'dashboard') renderDashboard();
+        }
+
+        // Clear the dashboard's date range filter and re-render as all-time
+        function clearDashboardDateFilter() {
+            document.getElementById('dash-date-from').value = '';
+            document.getElementById('dash-date-to').value = '';
+            renderDashboard();
+        }
+
+        // Returns claims whose reportDate falls within the dashboard's From/To filter (inclusive)
+        function getDashboardFilteredClaims() {
+            const from = document.getElementById('dash-date-from').value;
+            const to = document.getElementById('dash-date-to').value;
+            return claims.filter(c => {
+                if (!from && !to) return true;
+                if (!c.reportDate) return false;
+                if (from && c.reportDate < from) return false;
+                if (to && c.reportDate > to) return false;
+                return true;
+            });
+        }
+
+        // Main dashboard render: aggregates filtered claims into stats + charts + matrix
+        function renderDashboard() {
+            if (typeof Chart === 'undefined') return; // Chart.js not loaded yet
+            const filtered = getDashboardFilteredClaims();
+            const from = document.getElementById('dash-date-from').value;
+            const to = document.getElementById('dash-date-to').value;
+
+            document.getElementById('dash-range-summary').innerText = (from || to)
+                ? `Showing ${from ? formatReportDate(from) : 'earliest'} → ${to ? formatReportDate(to) : 'latest'}`
+                : 'Showing all-time data';
+
+            // Flatten every claim into one row per product+defect pair (a claim can report multiple units)
+            const units = [];
+            filtered.forEach(c => {
+                if (c.items && c.items.length > 0) {
+                    c.items.forEach(it => units.push({ product: it.product, defect: it.defect, date: c.reportDate }));
+                } else if (c.productName) {
+                    units.push({ product: c.productName, defect: 'Unspecified', date: c.reportDate });
+                }
+            });
+
+            document.getElementById('dash-stat-claims').innerText = filtered.length;
+            document.getElementById('dash-stat-units').innerText = units.length;
+
+            const productCounts = {};
+            const defectCounts = {};
+            units.forEach(u => {
+                productCounts[u.product] = (productCounts[u.product] || 0) + 1;
+                defectCounts[u.defect] = (defectCounts[u.defect] || 0) + 1;
+            });
+
+            const topProduct = Object.entries(productCounts).sort((a, b) => b[1] - a[1])[0];
+            const topDefect = Object.entries(defectCounts).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('dash-stat-top-product').innerText = topProduct ? `${topProduct[0]} (${topProduct[1]})` : '—';
+            document.getElementById('dash-stat-top-defect').innerText = topDefect ? `${topDefect[0]} (${topDefect[1]})` : '—';
+
+            renderBarChart('chart-by-product', productCounts, '#059669');
+            renderBarChart('chart-by-defect', defectCounts, '#e11d48');
+
+            // Trend: number of claims per report date within range
+            const trendCounts = {};
+            filtered.forEach(c => { if (c.reportDate) trendCounts[c.reportDate] = (trendCounts[c.reportDate] || 0) + 1; });
+            const sortedDates = Object.keys(trendCounts).sort();
+            renderTrendChart(sortedDates, sortedDates.map(d => trendCounts[d]));
+
+            renderMatrixTable(units);
+        }
+
+        // Generic horizontal-friendly bar chart, sorted highest-first
+        function renderBarChart(canvasId, countsObj, color) {
+            const entries = Object.entries(countsObj).sort((a, b) => b[1] - a[1]);
+            const labels = entries.map(e => e[0]);
+            const data = entries.map(e => e[1]);
+            if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            chartInstances[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6, maxBarThickness: 44 }] },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                    responsive: true
+                }
+            });
+        }
+
+        // Line chart of claim volume over time
+        function renderTrendChart(dates, counts) {
+            if (chartInstances['chart-trend']) chartInstances['chart-trend'].destroy();
+            const ctx = document.getElementById('chart-trend').getContext('2d');
+            chartInstances['chart-trend'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates.map(d => formatReportDate(d)),
+                    datasets: [{
+                        label: 'Claims',
+                        data: counts,
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5,150,105,0.12)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#059669'
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                    responsive: true
+                }
+            });
+        }
+
+        // Product x Defect heatmap-style breakdown table
+        function renderMatrixTable(units) {
+            const allProducts = Array.from(new Set([...productList, ...units.map(u => u.product)]));
+            const allDefects = Array.from(new Set([...defectList, ...units.map(u => u.defect)]));
+
+            const matrix = {};
+            let max = 0;
+            units.forEach(u => {
+                matrix[u.product] = matrix[u.product] || {};
+                matrix[u.product][u.defect] = (matrix[u.product][u.defect] || 0) + 1;
+                if (matrix[u.product][u.defect] > max) max = matrix[u.product][u.defect];
+            });
+
+            let html = '<thead><tr><th class="text-left text-xs font-bold text-slate-500 uppercase p-2">Product \\ Defect</th>';
+            allDefects.forEach(d => { html += `<th class="text-center text-xs font-bold text-slate-500 uppercase p-2">${d}</th>`; });
+            html += '<th class="text-center text-xs font-bold text-slate-700 uppercase p-2">Total</th></tr></thead><tbody>';
+
+            allProducts.forEach(p => {
+                let rowTotal = 0;
+                html += `<tr class="border-t border-slate-100"><td class="p-2 font-semibold text-slate-700 whitespace-nowrap">${p}</td>`;
+                allDefects.forEach(d => {
+                    const count = (matrix[p] && matrix[p][d]) || 0;
+                    rowTotal += count;
+                    const intensity = max ? count / max : 0;
+                    const style = count > 0 ? `style="background-color: rgba(225,29,72,${(0.10 + intensity * 0.55).toFixed(2)});"` : '';
+                    html += `<td class="text-center p-2 rounded ${count > 0 ? 'font-bold text-rose-800' : 'text-slate-300'}" ${style}>${count || '—'}</td>`;
+                });
+                html += `<td class="text-center p-2 font-bold text-slate-800">${rowTotal}</td></tr>`;
+            });
+            html += '</tbody>';
+            document.getElementById('dash-matrix-table').innerHTML = html;
+        }
 
         // Lead Source Style Badges Config
         const sourceBadges = {
@@ -863,6 +1098,11 @@
             document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-pending').innerText = pending;
             document.getElementById('stat-done').innerText = done;
+
+            // Keep the Dashboard view live too, whenever it's the active tab
+            if (typeof currentView !== 'undefined' && currentView === 'dashboard') {
+                renderDashboard();
+            }
         }
 
         // Toggle Claim Status Directly
