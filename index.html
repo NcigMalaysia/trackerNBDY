@@ -232,7 +232,17 @@
 
         <div class="space-y-6" id="view-list">
             <!-- Filter and Search -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <!-- Status Tabs: toggling a claim to Done moves it out of Pending into this tab -->
+                <div class="flex bg-slate-100 rounded-xl p-1 gap-1 w-full sm:w-fit">
+                    <button onclick="switchStatusTab('Pending')" id="status-tab-pending" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition bg-white text-amber-600 shadow-sm">
+                        Pending <span id="status-tab-pending-count" class="text-slate-400 font-semibold">(0)</span>
+                    </button>
+                    <button onclick="switchStatusTab('Done')" id="status-tab-done" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition text-slate-500 hover:text-slate-700">
+                        Done <span id="status-tab-done-count" class="text-slate-400 font-semibold">(0)</span>
+                    </button>
+                </div>
+                <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
                     <div class="relative w-full md:w-72">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -240,7 +250,7 @@
                         <input type="text" id="search-input" oninput="handleFilterAndSearch()" placeholder="Search name, phone, order..." class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm">
                     </div>
                     <div class="flex gap-2 w-full md:w-auto">
-                        <select id="filter-product" onchange="handleFilterAndSearch()" class="w-1/2 md:w-auto px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white outline-none">
+                        <select id="filter-product" onchange="handleFilterAndSearch()" class="w-full md:w-auto px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white outline-none">
                             <option value="">All Products</option>
                             <option value="Qismet">Qismet</option>
                             <option value="Destino Oscura">Destino Oscura</option>
@@ -248,19 +258,15 @@
                             <option value="Prima Facie">Prima Facie</option>
                             <option value="Carte Blanche">Carte Blanche</option>
                             <option value="Bhava">Bhava</option>
-
-                        </select>
-                        <select id="filter-status" onchange="handleFilterAndSearch()" class="w-1/2 md:w-auto px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white outline-none">
-                            <option value="">All Statuses</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Done">Done</option>
                         </select>
                     </div>
                 </div>
+            </div>
 
                 <!-- Tracker List Card Container -->
                 <div class="space-y-4" id="claims-container">
                     <!-- Dynamic Claim Cards will go here -->
+
                 </div>
 
                 <!-- Empty State -->
@@ -468,13 +474,14 @@
         let activeConfirmRequiresPassword = false;
 
         // Supported Products list
-        const productList = ["Qismet", "Destino Oscura", "Zarya", "Prima Facie", "Carte Blanche"];
+        const productList = ["Qismet", "Destino Oscura", "Zarya", "Prima Facie", "Carte Blanche", "Bhava"];
         
         // Supported Defects list
         const defectList = ["Leaking", "Broken", "Wrong item", "Short item"];
 
         // ====== DASHBOARD STATE ======
         let currentView = 'list'; // 'list' | 'dashboard'
+        let currentStatusTab = 'Pending'; // 'Pending' | 'Done' — which status tab is showing in the Claims List
         let chartInstances = {}; // canvasId -> Chart.js instance, so we can destroy/recreate cleanly
 
         // Toggle between the Claims List tab and the Dashboard tab
@@ -651,7 +658,7 @@
             const cached = localStorage.getItem('nbdy_warranty_claims_cache');
             if (cached) {
                 try { claims = JSON.parse(cached); } catch (e) { claims = []; }
-                renderClaims();
+                handleFilterAndSearch();
                 updateStatistics();
             }
             resetForm();
@@ -691,7 +698,7 @@
                 if (!data.success) throw new Error(data.error || 'Unknown error from Sheet');
                 claims = data.claims || [];
                 localStorage.setItem('nbdy_warranty_claims_cache', JSON.stringify(claims));
-                renderClaims();
+                handleFilterAndSearch();
                 updateStatistics();
                 setSyncStatus('live');
                 if (isManualRefresh) showToast('Data refreshed from Google Sheet.', 'success');
@@ -1118,7 +1125,7 @@
         async function toggleClaimStatus(id) {
             const result = await syncToSheet('toggleStatus', { id });
             if (result) {
-                renderClaims();
+                handleFilterAndSearch();
                 updateStatistics();
                 const updated = claims.find(c => c.id === id);
                 showToast(`Claim status changed to ${updated ? updated.status : ''}!`, 'success');
@@ -1245,7 +1252,7 @@
 
             if (result) {
                 resetForm();
-                renderClaims();
+                handleFilterAndSearch();
                 updateStatistics();
             }
         }
@@ -1408,7 +1415,7 @@
                 async function() {
                     const result = await syncToSheet('delete', { id });
                     if (result) {
-                        renderClaims();
+                        handleFilterAndSearch();
                         updateStatistics();
                         showToast('Warranty record deleted successfully.', 'info');
                     }
@@ -1423,7 +1430,7 @@
                 async function() {
                     const result = await syncToSheet('clearAll', {});
                     if (result) {
-                        renderClaims();
+                        handleFilterAndSearch();
                         updateStatistics();
                         showToast('All claim records deleted.', 'info');
                     }
@@ -1432,11 +1439,33 @@
             );
         }
 
-        // Filter and Search Engine
+        // Switch between the Pending and Done status tabs in the Claims List view.
+        // Toggling a claim's status re-renders through this same filter, so a claim
+        // marked Done immediately disappears from the Pending tab and shows up under Done.
+        function switchStatusTab(tab) {
+            currentStatusTab = tab;
+
+            const baseCls = 'flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition';
+            const activeCls = tab === 'Pending' ? `${baseCls} bg-white text-amber-600 shadow-sm` : `${baseCls} bg-white text-emerald-600 shadow-sm`;
+            const inactiveCls = `${baseCls} text-slate-500 hover:text-slate-700`;
+
+            document.getElementById('status-tab-pending').className = currentStatusTab === 'Pending' ? activeCls : inactiveCls;
+            document.getElementById('status-tab-done').className = currentStatusTab === 'Done' ? activeCls : inactiveCls;
+
+            handleFilterAndSearch();
+        }
+
+        // Keep the tab counts (e.g. "Pending (12)") in sync with the full claims list
+        function updateStatusTabCounts() {
+            const pendingCount = claims.filter(c => c.status === 'Pending').length;
+            const doneCount = claims.filter(c => c.status === 'Done').length;
+            document.getElementById('status-tab-pending-count').innerText = `(${pendingCount})`;
+            document.getElementById('status-tab-done-count').innerText = `(${doneCount})`;
+        }
+
         function handleFilterAndSearch() {
             const searchQuery = document.getElementById('search-input').value.toLowerCase();
             const filterProduct = document.getElementById('filter-product').value;
-            const filterStatus = document.getElementById('filter-status').value;
 
             const filtered = claims.filter(claim => {
                 // Match search criteria
@@ -1455,12 +1484,14 @@
                     matchesProduct = claim.productName === filterProduct;
                 }
 
-                const matchesStatus = filterStatus === "" || claim.status === filterStatus;
+                // Match whichever status tab (Pending / Done) is currently active
+                const matchesStatus = claim.status === currentStatusTab;
 
                 return matchesSearch && matchesProduct && matchesStatus;
             });
 
             renderClaims(filtered);
+            updateStatusTabCounts();
         }
 
         // Global Fetch Request Generator for calling Gemini API
