@@ -143,6 +143,11 @@
                         </div>
                     </div>
 
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="cust-address">Customer Address <span class="text-slate-400 normal-case font-normal">(optional)</span></label>
+                        <textarea id="cust-address" rows="2" placeholder="Alamat penuh untuk return/replacement..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm resize-none"></textarea>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1" for="order-num">Order Number <span class="text-red-500">*</span></label>
@@ -1030,6 +1035,12 @@
                                     <span>${claim.customerPhone}</span>
                                 </div>
                             </div>
+                            ${claim.customerAddress ? `
+                            <div class="flex items-start gap-1 text-slate-500 text-xs -mt-1">
+                                <svg class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <span>${claim.customerAddress}</span>
+                            </div>
+                            ` : ''}
                             <!-- Tracking Numbers -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-100">
                                 <div class="text-xs">
@@ -1139,6 +1150,7 @@
             const editId = document.getElementById('edit-id').value;
             const name = document.getElementById('cust-name').value.trim();
             const phone = document.getElementById('cust-phone').value.trim();
+            const address = document.getElementById('cust-address').value.trim();
             const source = document.getElementById('cust-source').value;
             const order = document.getElementById('order-num').value.trim();
             const reportDate = document.getElementById('report-date').value;
@@ -1198,6 +1210,7 @@
                     ...existing,
                     customerName: name,
                     customerPhone: phone,
+                    customerAddress: address,
                     source: source,
                     orderNumber: order,
                     items: items,
@@ -1224,6 +1237,7 @@
                     id: 'claim-' + Date.now(),
                     customerName: name,
                     customerPhone: phone,
+                    customerAddress: address,
                     source: source,
                     orderNumber: order,
                     items: items,
@@ -1265,6 +1279,7 @@
             document.getElementById('edit-id').value = claim.id;
             document.getElementById('cust-name').value = claim.customerName;
             document.getElementById('cust-phone').value = claim.customerPhone;
+            document.getElementById('cust-address').value = claim.customerAddress || '';
             document.getElementById('cust-source').value = claim.source || '';
             document.getElementById('order-num').value = claim.orderNumber;
             document.getElementById('report-date').value = claim.reportDate || '';
