@@ -360,76 +360,6 @@
         <img id="photo-lightbox-img" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
     </div>
 
-    <!-- AI Reply Modal -->
-    <div id="ai-reply-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-300" id="ai-reply-modal-content">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-emerald-50">
-                <div class="flex items-center gap-2">
-                    <div class="p-2 bg-emerald-600 rounded-xl text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-900">AI Customer Reply Draft</h3>
-                        <p class="text-xs text-slate-500">Draft personalized support replies instantly</p>
-                    </div>
-                </div>
-                <button onclick="closeReplyModal()" class="text-slate-400 hover:text-slate-600 bg-white p-1 rounded-full shadow-sm hover:scale-105 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            
-            <div class="p-6 space-y-4">
-                <!-- Tone and Platform selection -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Tone & Voice</label>
-                        <select id="ai-reply-tone" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none bg-white focus:ring-2 focus:ring-emerald-500">
-                            <option value="Polite & Reassuring">Polite & Reassuring</option>
-                            <option value="Sincere & Apologetic">Sincere & Apologetic</option>
-                            <option value="Direct & Informative">Direct & Informative</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Contact Platform</label>
-                        <select id="ai-reply-platform" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none bg-white focus:ring-2 focus:ring-emerald-500">
-                            <option value="WhatsApp / Short Message">WhatsApp / SMS</option>
-                            <option value="Email / Detailed Letter">Professional Email</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
-                    <div class="text-xs text-slate-600">
-                        <p class="font-semibold text-slate-700">Target Customer:</p>
-                        <p id="ai-target-customer" class="text-slate-500 mt-0.5">Siti Nurhaliza (NBDY-55091)</p>
-                    </div>
-                    <button onclick="triggerAICustomerReplyGeneration()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl transition shadow flex items-center gap-1">
-                        Generate Draft
-                    </button>
-                </div>
-
-                <!-- AI Response Textarea -->
-                <div class="relative">
-                    <div id="ai-reply-loader" class="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center rounded-xl hidden">
-                        <svg class="animate-spin h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <p class="text-xs font-bold text-emerald-600 mt-2 animate-pulse">Drafting perfect reply...</p>
-                    </div>
-                    <textarea id="ai-reply-output" rows="8" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-mono bg-slate-50 resize-none text-slate-700" placeholder="Generated draft response will appear here..."></textarea>
-                </div>
-            </div>
-
-            <div class="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-                <button onclick="closeReplyModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-sm hover:bg-slate-100 transition">
-                    Close
-                </button>
-                <button onclick="copyGeneratedReply()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition flex items-center gap-1.5 shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
-                    Copy to Clipboard
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Custom Dialog Confirmation Modal (Replaces native confirm alerts) -->
     <div id="custom-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-55 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-md mx-4 p-6 transform scale-95 transition-transform duration-300" id="custom-confirm-content">
@@ -475,7 +405,6 @@
 
         // Database State (source of truth = Google Sheet, cached locally for fast paint)
         let claims = [];
-        let currentlySelectedClaimForReply = null;
         let isSyncing = false;
         let claimPhotos = []; // {status: 'new', dataUrl} or {status: 'existing', url}
         
@@ -1114,10 +1043,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </button>
                             <!-- AI Sparkle Reply Button -->
-                            <button onclick="openReplyModalForClaim('${claim.id}')" class="flex-1 md:flex-none px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 font-bold text-xs" title="Generate AI Customer Response">
-                                <svg class="w-4 h-4 text-emerald-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                AI Reply
-                            </button>
+                            
                             <div class="flex gap-2">
                                 <button onclick="startEditClaim('${claim.id}')" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition" title="Edit Claim">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
@@ -1526,156 +1452,6 @@
 
             renderClaims(filtered);
             updateStatusTabCounts();
-        }
-
-        // Global Fetch Request Generator for calling Gemini API
-        async function fetchGeminiAIResponse(prompt, systemInstruction = "") {
-            const apiKey = ""; // Canvas handles injecting API keys dynamically
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }]
-            };
-
-            if (systemInstruction) {
-                payload.systemInstruction = {
-                    parts: [{ text: systemInstruction }]
-                };
-            }
-
-            let retries = 3;
-            let delay = 1000;
-
-            while (retries > 0) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) {
-                        return text;
-                    } else {
-                        throw new Error("Empty response payload from Gemini API.");
-                    }
-                } catch (error) {
-                    retries--;
-                    if (retries === 0) {
-                        throw error;
-                    }
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2; // Exponential Backoff
-                }
-            }
-        }
-
-        // AI Customer Reply Methods
-        function openReplyModalForClaim(id) {
-            const claim = claims.find(c => c.id === id);
-            if (!claim) return;
-
-            currentlySelectedClaimForReply = claim;
-            
-            // Populate modal targets
-            document.getElementById('ai-target-customer').innerText = `${claim.customerName} (${claim.orderNumber})`;
-            document.getElementById('ai-reply-output').value = "";
-            
-            // Show modal
-            const modal = document.getElementById('ai-reply-modal');
-            const content = document.getElementById('ai-reply-modal-content');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.add('opacity-100');
-                content.classList.remove('scale-95');
-                content.classList.add('scale-100');
-            }, 10);
-        }
-
-        function closeReplyModal() {
-            const modal = document.getElementById('ai-reply-modal');
-            const content = document.getElementById('ai-reply-modal-content');
-            modal.classList.remove('opacity-100');
-            content.classList.remove('scale-100');
-            content.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                currentlySelectedClaimForReply = null;
-            }, 300);
-        }
-
-        async function triggerAICustomerReplyGeneration() {
-            if (!currentlySelectedClaimForReply) {
-                showToast("No customer selected for drafting.", "info");
-                return;
-            }
-
-            const loader = document.getElementById('ai-reply-loader');
-            const outputTextarea = document.getElementById('ai-reply-output');
-            const tone = document.getElementById('ai-reply-tone').value;
-            const platform = document.getElementById('ai-reply-platform').value;
-
-            loader.classList.remove('hidden');
-
-            const claim = currentlySelectedClaimForReply;
-            
-            // Format dynamic product defects list for AI prompt
-            let itemsString = "";
-            if (claim.items && claim.items.length > 0) {
-                itemsString = claim.items.map(item => `- Product: ${item.product} | Defect: ${item.defect}`).join('\n');
-            } else {
-                itemsString = `- Product: ${claim.productName || 'N/A'}`;
-            }
-
-            const prompt = `
-                Draft a message to our customer, ${claim.customerName}.
-                
-                NBDY Warranty details:
-                - Source Platform: ${claim.source || 'Social Media'}
-                - Items & Defect Details:
-                ${itemsString}
-                - Order/Invoice Number: ${claim.orderNumber}
-                - Current Operational Status: ${claim.status}
-                - Return Shipment status: ${claim.returnStatus || 'Not initiated'}
-                - Return Shipment tracking (Customer back to us): ${claim.trackingReturn || 'Not provided yet'}
-                - Replacement unit tracking (Us back to Customer): ${claim.trackingNew || 'Not dispatched/generated yet'}
-                - Notes regarding repair or investigation: ${claim.notes || 'None recorded'}
-
-                Requirements:
-                - Tone must be: ${tone}
-                - Medium/Platform style: ${platform}
-                - Keep the response personal, reassuring, and highly professional.
-                - Address them directly. If returnStatus is "Initiate Return", prioritize explaining that we are ready to receive their item and provide clear instructions.
-            `;
-
-            const systemPrompt = "You are a world-class customer success specialist representing NBDY, a premium brand. Ensure your generated text is polite, highly readable, cleanly structured, and contains no code blocks, meta tags, or system prefixes. Just provide the final, ready-to-copy text response.";
-
-            try {
-                const responseText = await fetchGeminiAIResponse(prompt, systemPrompt);
-                outputTextarea.value = responseText.trim();
-                showToast("AI customer draft ready!", "success");
-            } catch (error) {
-                console.error("Gemini draft generation error:", error);
-                outputTextarea.value = "Failed to communicate with AI model. Please verify your connection and try again.";
-                showToast("Could not generate draft. Please retry.", "info");
-            } finally {
-                loader.classList.add('hidden');
-            }
-        }
-
-        function copyGeneratedReply() {
-            const text = document.getElementById('ai-reply-output').value;
-            if (!text.trim()) {
-                showToast("Nothing to copy!", "info");
-                return;
-            }
-            copyToClipboard(text);
         }
 
         // Copy Tracking Code Utility
