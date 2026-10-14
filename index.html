@@ -1025,12 +1025,10 @@
                                     <span>${claim.customerPhone}</span>
                                 </div>
                             </div>
-                            ${claim.customerAddress ? `
-                            <div class="flex items-start gap-1 text-slate-500 text-xs -mt-1">
+                            <div class="flex items-start gap-1.5 text-slate-500 text-xs -mt-1">
                                 <svg class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                <span>${claim.customerAddress}</span>
+                                <span><strong class="font-semibold text-slate-600">Address:</strong> ${claim.customerAddress || 'Not provided'}</span>
                             </div>
-                            ` : ''}
                             <!-- Tracking Numbers -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-100">
                                 <div class="text-xs">
