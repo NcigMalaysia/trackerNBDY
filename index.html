@@ -379,7 +379,7 @@
 
     <!-- Photo Lightbox -->
     <div id="photo-lightbox" onclick="closePhotoLightbox()" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center p-4 cursor-zoom-out">
-        <img id="photo-lightbox-img" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+        <img id="photo-lightbox-img" src="" onclick="event.stopPropagation()" class="max-w-full max-h-full rounded-lg shadow-2xl cursor-default">
     </div>
 
     <!-- Custom Dialog Confirmation Modal (Replaces native confirm alerts) -->
@@ -830,15 +830,33 @@
             }
         }
 
+        function getDisplayPhotoUrl(url) {
+            const value = String(url || '');
+            const match = value.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+                value.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
+            if (!match) return value;
+
+            return 'https://drive.google.com/thumbnail?id=' +
+                encodeURIComponent(match[1]) +
+                '&sz=w1600';
+        }
+
         function renderPhotoPreviews() {
             const container = document.getElementById('photo-previews');
             if (!container) return;
-            container.innerHTML = claimPhotos.map((p, idx) => `
-                <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200">
-                    <img src="${p.status === 'new' ? p.dataUrl : p.url}" class="w-full h-full object-cover">
-                    <button type="button" onclick="removePhoto(${idx})" class="absolute top-0.5 right-0.5 bg-black/60 hover:bg-black/80 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] leading-none">✕</button>
-                </div>
-            `).join('');
+            container.innerHTML = claimPhotos.map((p, idx) => {
+                const photoUrl = p.status === 'new'
+                    ? p.dataUrl
+                    : getDisplayPhotoUrl(p.url);
+
+                return `
+                    <div class="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
+                        <img src="${photoUrl}" class="w-full h-full object-cover" alt="Uploaded claim photo">
+                        <button type="button" onclick="removePhoto(${idx})" class="absolute top-1 right-1 bg-black/65 hover:bg-black/85 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none">✕</button>
+                    </div>
+                `;
+            }).join('');
         }
 
         function removePhoto(idx) {
@@ -847,7 +865,7 @@
         }
 
         function openPhotoLightbox(url) {
-            document.getElementById('photo-lightbox-img').src = url;
+            document.getElementById('photo-lightbox-img').src = getDisplayPhotoUrl(url);
             const lb = document.getElementById('photo-lightbox');
             lb.classList.remove('hidden');
             lb.classList.add('flex');
@@ -1079,10 +1097,17 @@
 
                             <!-- Attached Photos -->
                             ${claim.photos && claim.photos.length > 0 ? `
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                ${claim.photos.map(url => `
-                                    <img src="${url}" onclick="openPhotoLightbox('${url}')" class="w-14 h-14 rounded-lg object-cover border border-slate-200 cursor-pointer hover:opacity-80 transition">
-                                `).join('')}
+                            <div class="mt-3 p-3 rounded-xl border border-slate-100 bg-slate-50/70">
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                                    Photos (${claim.photos.length})
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    ${claim.photos.map((url, photoIndex) => `
+                                        <button type="button" onclick="openPhotoLightbox('${url}')" class="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm cursor-zoom-in hover:ring-2 hover:ring-emerald-400 transition" title="Open photo ${photoIndex + 1}">
+                                            <img src="${getDisplayPhotoUrl(url)}" class="w-full h-full object-cover" alt="Claim photo ${photoIndex + 1}">
+                                        </button>
+                                    `).join('')}
+                                </div>
                             </div>
                             ` : ''}
 
