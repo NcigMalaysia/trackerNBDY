@@ -223,6 +223,7 @@ function doGet(e) {
       claims: getAllClaims_()
     });
   } catch (err) {
+    console.error("Warranty API error: " + (err.stack || err.message || err));
     return jsonOut_({
       success: false,
       error: err.message
@@ -332,6 +333,7 @@ function doPost(e) {
       }
     }
   } catch (err) {
+    console.error("Warranty API error: " + (err.stack || err.message || err));
     return jsonOut_({
       success: false,
       error: err.message
@@ -339,7 +341,7 @@ function doPost(e) {
   }
 }
 
-// Simpan foto ke Google Drive.
+// Simpan foto dan video ke Google Drive.
 function getPhotosFolder_() {
   const FOLDER_NAME = "NBDY Warranty Claim Photos";
   const folders = DriveApp.getFoldersByName(FOLDER_NAME);
@@ -348,16 +350,37 @@ function getPhotosFolder_() {
   return DriveApp.createFolder(FOLDER_NAME);
 }
 
+// Jalankan fungsi ini sekali dari editor Apps Script selepas memasang fungsi
+// gambar. Ini meminta kebenaran Google Drive dan memastikan folder tersedia.
+function authorizePhotoStorage() {
+  const folder = getPhotosFolder_();
+  return "Photo storage ready: " + folder.getName();
+}
+
 function uploadPhotoToDrive_(dataUrl, filename) {
   const matches = String(dataUrl || "").match(
-    /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/
+    /^data:((?:image|video)\/[a-zA-Z0-9.+-]+);base64,(.+)$/
   );
 
-  if (!matches) throw new Error("Invalid image data");
+  if (!matches) throw new Error("Invalid photo or video data");
 
   const mimeType = matches[1];
+  const allowedVideoTypes = ["video/mp4", "video/quicktime", "video/webm"];
+
+  if (
+    mimeType.indexOf("image/") !== 0 &&
+    allowedVideoTypes.indexOf(mimeType) === -1
+  ) {
+    throw new Error("Unsupported media type: " + mimeType);
+  }
+
   const base64Data = matches[2];
   const bytes = Utilities.base64Decode(base64Data);
+
+  if (mimeType.indexOf("video/") === 0 && bytes.length > 10 * 1024 * 1024) {
+    throw new Error("Video must not exceed 10 MB");
+  }
+
   const blob = Utilities.newBlob(bytes, mimeType, filename);
   const folder = getPhotosFolder_();
   const file = folder.createFile(blob);
